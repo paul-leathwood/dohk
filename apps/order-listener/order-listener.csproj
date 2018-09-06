@@ -3,11 +3,14 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RootNamespace>order_listener</RootNamespace>
+    <RootNamespace>Order.Listener</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Flurl" Version="2.8.0" />
+    <PackageReference Include="Flurl.Http" Version="2.3.2" />
     <PackageReference Include="Microsoft.Azure.EventHubs" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Azure.EventHubs.Processor" Version="2.1.0" />
     <PackageReference Include="RabbitMQ.Client" Version="5.1.0" />
   </ItemGroup>
 

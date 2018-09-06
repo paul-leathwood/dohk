@@ -15,19 +15,20 @@
     [ApiController]
     public class OrderController : ControllerBase
     {
-        static readonly string mongoUrl = System.Environment.GetEnvironmentVariable("MONGO_URL");
-        static readonly string rabbitUrl = System.Environment.GetEnvironmentVariable("RABBIT_URL");
-        static readonly string eventHubUrl = System.Environment.GetEnvironmentVariable("EVENTHUB_URL");
-        static readonly string eventHubName = System.Environment.GetEnvironmentVariable("EVENTHUB_NAME");
+        static readonly string mongoUrl = Environment.GetEnvironmentVariable("MONGO_URL");
+        static readonly string rabbitUrl = Environment.GetEnvironmentVariable("RABBIT_URL");
+        static readonly string eventHubUrl = Environment.GetEnvironmentVariable("EVENTHUB_URL");
+        static readonly string eventHubName = Environment.GetEnvironmentVariable("EVENTHUB_NAME");
 
         // POST api/order
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] Models.Order order)
         {
+            Console.WriteLine(order);
             await SaveToDatastore(order);
-            if (string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable(eventHubUrl)))
+            if (string.IsNullOrEmpty(eventHubUrl))
             {
-                await SendToRabbitMQ(order);
+                SendToRabbitMQ(order);
             }
             else
             {
@@ -59,12 +60,12 @@
             await eventHubClient.CloseAsync();
         }
 
-        private static async Task SendToRabbitMQ(Models.Order order)
+        private static void SendToRabbitMQ(Models.Order order)
         {
-            var factory = new ConnectionFactory() { HostName = rabbitUrl };
-            using(var connection = factory.CreateConnection())
+            var factory = new ConnectionFactory() { Uri = new Uri(rabbitUrl) };
+            using (var connection = factory.CreateConnection())
             {
-                using(var channel = connection.CreateModel())
+                using (var channel = connection.CreateModel())
                 {
                     channel.QueueDeclare(queue: "orders",
                                         durable: false,
@@ -72,7 +73,7 @@
                                         autoDelete: false,
                                         arguments: null);
 
-                    string message = order.ToString();
+                    string message = JsonConvert.SerializeObject(order);
                     var body = Encoding.UTF8.GetBytes(message);
 
                     channel.BasicPublish(exchange: "",

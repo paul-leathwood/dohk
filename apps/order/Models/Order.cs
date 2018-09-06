@@ -1,10 +1,12 @@
 namespace Order.Models
 {
     using MongoDB.Bson;
+    using MongoDB.Bson.Serialization.Attributes;
 
     public class Order
     {
-        public ObjectId Id { get; set; }
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string Id { get; set; }
 
         public string EmailAddress { get; set; }
 
