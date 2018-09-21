@@ -34,6 +34,9 @@
                 Console.WriteLine("Not found (already processed) or error: ");
             }
             Console.WriteLine($"Retrieving from MongoDB retrieved from {stopWatch.ElapsedMilliseconds}ms");
+
+            result.Status = "Fulfilled";
+            orderCollection.ReplaceOne(o => o.Id == order.Id, result);
             return result;
         }
     }

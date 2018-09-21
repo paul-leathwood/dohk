@@ -3,7 +3,6 @@
     using System;
     using System.Text;
     using System.Threading.Tasks;
-    using Flurl.Http;
     using Microsoft.Azure.EventHubs;
     using Microsoft.Azure.EventHubs.Processor;
     using Newtonsoft.Json;
@@ -13,12 +12,13 @@
     class Program
     {
         static readonly string rabbitUrl = Environment.GetEnvironmentVariable("RABBIT_URL");
-        static readonly string processUrl = Environment.GetEnvironmentVariable("PROCESS_URL");
-        private const string StorageContainerName = "{Storage account container name}";
-        private const string StorageAccountName = "{Storage account name}";
-        private const string StorageAccountKey = "{Storage account key}";
+        static readonly string eventHubName = Environment.GetEnvironmentVariable("EVENTHUB_NAME");
+        static readonly string eventHubUrl = Environment.GetEnvironmentVariable("EVENTHUB_URL");
+        static readonly string storageName = Environment.GetEnvironmentVariable("STORAGE_NAME");
+        static readonly string storageAccountName = Environment.GetEnvironmentVariable("STORAGE_ACCOUNT");
+        static readonly string storageAccountKey = Environment.GetEnvironmentVariable("STORAGE_KEY");
 
-        private static readonly string StorageConnectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}", StorageAccountName, StorageAccountKey);
+        static readonly string storageUrl = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}", storageAccountName, storageAccountKey);
 
         static void Main(string[] args)
         {
@@ -29,7 +29,7 @@
         {
             try
             {
-                ListenToEventHub();
+                await ListenToEventHub();
                 ListenToRabbitMQ();
             }
             catch (Exception ex)
@@ -39,29 +39,39 @@
             }
         }
         
-        private static void ListenToEventHub()
+        private static async Task ListenToEventHub()
         {
-            // Console.WriteLine("Registering EventProcessor...");
+            if (string.IsNullOrEmpty(eventHubUrl))
+            {
+                return;
+            }
 
-            // var eventProcessorHost = new EventProcessorHost(
-            //     System.Environment.GetEnvironmentVariable("EVENTHUB_NAME"),
-            //     PartitionReceiver.DefaultConsumerGroupName,
-            //     System.Environment.GetEnvironmentVariable("EVENT_URL"),
-            //     StorageConnectionString,
-            //     StorageContainerName);
+            Console.WriteLine("Registering EventProcessor...");
 
-            // // Registers the Event Processor Host and starts receiving messages
-            // await eventProcessorHost.RegisterEventProcessorAsync<OrderEventProcessor>();
+            var eventProcessorHost = new EventProcessorHost(
+                eventHubName,
+                PartitionReceiver.DefaultConsumerGroupName,
+                eventHubUrl,
+                storageUrl,
+                storageName);
 
-            // Console.WriteLine("Receiving. Press ENTER to stop worker.");
-            // Console.ReadLine();
+            // Registers the Event Processor Host and starts receiving messages
+            await eventProcessorHost.RegisterEventProcessorAsync<OrderEventProcessor>();
 
-            // // Disposes of the Event Processor Host
-            // await eventProcessorHost.UnregisterEventProcessorAsync();
+            Console.WriteLine("Receiving. Press ENTER to stop worker.");
+            Console.ReadLine();
+
+            // Disposes of the Event Processor Host
+            await eventProcessorHost.UnregisterEventProcessorAsync();
         }
 
         private static void ListenToRabbitMQ()
         {
+            if(string.IsNullOrEmpty(rabbitUrl))
+            {
+                return;
+            }
+
             var factory = new ConnectionFactory() { Uri = new Uri(rabbitUrl) };
             using (var connection = factory.CreateConnection())
             {
@@ -80,7 +90,7 @@
                         var message = Encoding.UTF8.GetString(body);
                         Console.WriteLine(" [x] Received {0}", message);
                         var order = JsonConvert.DeserializeObject(message);
-                        await SendToProcess(order);
+                        await Process.SendAsync(order);
                     };
                     channel.BasicConsume(queue: "orders",
                                         autoAck: true,
@@ -89,19 +99,6 @@
                     Console.WriteLine(" Press [enter] to exit.");
                     Console.ReadLine();
                 }
-            }
-        }
-
-        private static async Task SendToProcess(object order)
-        {
-            try
-            {
-                var response = await processUrl.PostJsonAsync(order);
-                Console.WriteLine(response.ToString());
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine(ex.ToString());
             }
         }
     }
