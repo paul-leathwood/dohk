@@ -47,3 +47,8 @@ If successful you should see something like
 Looking for { orderid: 5ba4e6426134ce00018f10e4, status: "Open" }
 Retrieving from MongoDB retrieved from 0ms
 ```
+
+
+# Advanced Challenges
+
+- Take the knowledge learned from the above and create a [docker-compose.yaml](https://docs.docker.com/compose/) file to start everything with a single command
