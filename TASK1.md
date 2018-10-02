@@ -11,8 +11,9 @@ Build images of the order, order-listener, and process applications see https://
 
 ## Step 2 - Creating a docker network
 
-In order for docker containers to communicate with each other they should be on the same docker network
-Create a docker network to run your containers on see https://docs.docker.com/network/
+In order for docker containers to communicate with each other they should be on the same docker network.
+
+Create a docker network to run your containers; see https://docs.docker.com/network/
 
 ## Step 3 - Run containers for MongoDB and RabbitMQ on your docker network
 
